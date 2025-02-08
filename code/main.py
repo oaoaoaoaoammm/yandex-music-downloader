@@ -33,6 +33,7 @@ def download_playlist(url, save_folder):
             'format': 'bestaudio/best',
             'outtmpl': f'{save_folder}/%(title)s.%(ext)s',
             'noplaylist': False,
+            'socket_timeout': 10,
             'postprocessors': [{
                 'key': 'FFmpegExtractAudio',
                 'preferredcodec': 'mp3',
