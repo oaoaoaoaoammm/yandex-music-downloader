@@ -66,11 +66,11 @@ def download_track(track, playlist_base_folder):
         # Обновление метаданных (название, исполнитель, альбом, жанр, язык и обложка)
         update_mp3_metadata(file_path, title, artist, album, genre, language, cover_url)
 
-        # Копирование в структуру языка + категории: ./<язык>/<категория>/
-        copy_to_language_structure(file_path, file_name, language, genre)
-
-        # Копирование в структуру категории: ./<категория>/
+        # Копирование в структуру категории: ./category/<категория>/
         copy_to_category_structure(file_path, file_name, genre)
+
+        # Копирование в структуру авторов: ./author/<имя автора>/
+        copy_to_author_structure(file_path, file_name, artist)
 
     except Exception as e:
         print(f"❌ Ошибка при скачивании трека {title}: {e}")
@@ -137,7 +137,7 @@ def copy_to_category_structure(source_file_path, file_name, genre):
     Если нужная папка отсутствует, она создаётся.
     """
     try:
-        dest_folder = os.path.join(".", genre)
+        dest_folder = os.path.join("./category/", genre)
         os.makedirs(dest_folder, exist_ok=True)
         dest_file_path = os.path.join(dest_folder, file_name)
         shutil.copy2(source_file_path, dest_file_path)
@@ -145,37 +145,58 @@ def copy_to_category_structure(source_file_path, file_name, genre):
     except Exception as e:
         print(f"❌ Ошибка при копировании в категорийную структуру: {e}")
 
+def copy_to_author_structure(source_file_path, file_name, artist):
+    """
+    Копирует скачанный трек в структуру: ./author/<имя автора>/.
+    Если нужная папка отсутствует, она создаётся.
+    """
+    try:
+        # Заменяем недопустимые символы в имени автора
+        artist_sanitized = "".join(c for c in artist if c.isalnum() or c in (' ', '_')).strip()
+        dest_folder = os.path.join("./author/", artist_sanitized)
+        os.makedirs(dest_folder, exist_ok=True)
+        dest_file_path = os.path.join(dest_folder, file_name)
+        shutil.copy2(source_file_path, dest_file_path)
+        print(f"📂 Трек скопирован в структуру авторов: {dest_file_path}")
+    except Exception as e:
+        print(f"❌ Ошибка при копировании в структуру авторов: {e}")
+
 
 if __name__ == "__main__":
     try:
-        raw_url = input("🔗 Вставьте ссылку на плейлист Яндекс.Музыки: ").strip()
-        if not raw_url:
-            raise ValueError("Ссылка не может быть пустой.")
+        #raw_url = input("🔗 Вставьте ссылку на плейлист Яндекс.Музыки: ").strip()
 
-        # Ожидаемый формат URL:
-        # https://music.yandex.ru/users/<user_id>/playlists/<playlist_id>?...
-        parts = raw_url.split("/")
-        if len(parts) < 2:
-            raise ValueError("Некорректная ссылка.")
+        urls = ["https://music.yandex.ru/users/gooder.05/playlists/3?utm_source=desktop&utm_medium=copy_link"]
 
-        # Извлекаем user_id и playlist_id (обычно user_id находится перед "playlists")
-        user_id = parts[-3]
-        playlist_id = parts[-1].split("?")[0]
+        for raw_url in urls:
+            if not raw_url:
+                raise ValueError("Ссылка не может быть пустой.")
 
-        # Получаем название плейлиста и список треков
-        playlist_name, tracks = get_playlist_info(user_id, playlist_id)
-        print(f"🎵 Название плейлиста: {playlist_name}")
-        print(f"📥 Найдено треков: {len(tracks)}")
+            # Ожидаемый формат URL:
+            # https://music.yandex.ru/users/<user_id>/playlists/<playlist_id>?...
+            parts = raw_url.split("/")
+            if len(parts) < 2:
+                raise ValueError("Некорректная ссылка.")
 
-        # Создаём папку для плейлиста (например, "./Mood: Αγάπη")
-        playlist_folder = os.path.join(".", playlist_name)
-        os.makedirs(playlist_folder, exist_ok=True)
+            # Извлекаем user_id и playlist_id (обычно user_id находится перед "playlists")
+            user_id = parts[-3]
+            playlist_id = parts[-1].split("?")[0]
 
-        # Скачиваем каждый трек из плейлиста
-        for track in tracks:
-            download_track(track, playlist_folder)
+            # Получаем название плейлиста и список треков
+            playlist_name, tracks = get_playlist_info(user_id, playlist_id)
+            print(f"🎵 Название плейлиста: {playlist_name}")
+            print(f"📥 Найдено треков: {len(tracks)}")
 
-        print(f"✅ Все треки из плейлиста «{playlist_name}» загружены!")
+            # Создаём папку для плейлиста (например, "./Mood: Αγάπη")
+            playlist_folder = os.path.join(".", playlist_name)
+            os.makedirs(playlist_folder, exist_ok=True)
+
+            # Скачиваем каждый трек из плейлиста
+            for track in tracks:
+                download_track(track, playlist_folder)
+
+            print(f"✅ Все треки из плейлиста «{playlist_name}» загружены!")
+
     except ValueError as e:
         print(f"❌ Ошибка ввода: {e}")
         sys.exit(1)
