@@ -33,7 +33,7 @@ urls = ["playlist link 1","playlist link 2"]
 for raw_url in urls:
 ```
 вместо 
-```python 
+```cmd 
 raw_url = input("🔗 Вставьте ссылку на плейлист Яндекс.Музыки: ").strip()
 ```
 
